@@ -24,7 +24,7 @@ if (fs.existsSync(filePath)) {
           process.exit(100);
         } else {
           // Create hash
-          const hash = crypto.createHash("sha256", dataFile).update("").digest("hex").trim();
+          const hash = crypto.createHash("sha256").update(dataFile).digest("hex").trim();
           // SHA256 Current hash
           const existedHash = data.toString().trim();
 
