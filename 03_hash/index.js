@@ -9,7 +9,7 @@ const filePath = process.argv[2];
 
 // Check if file exists
 if (fs.existsSync(filePath)) {
-  console.log(chalk.greenBright("Start Reading file"));
+  console.log(chalk.greenBright("Start Reading file..."));
 
   // Read sha256
   fs.readFile(filePath + ".sha256", (err, data) => {
@@ -23,11 +23,22 @@ if (fs.existsSync(filePath)) {
           console.log(chalk.redBright(err));
           process.exit(100);
         } else {
-          //
-          const hash = crypto.createHash("sha256", dataFile).digest("hex");
+          // Create hash
+          const hash = crypto.createHash("sha256", dataFile).update("").digest("hex").trim();
+          // SHA256 Current hash
           const existedHash = data.toString().trim();
-          console.log(hash.toString());
-          console.log(existedHash);
+
+          console.table([
+            ["Crypto", hash],
+            ["SHA256", existedHash],
+          ]);
+          if (hash === existedHash) {
+            console.log(chalk.greenBright("HASH ARE EQUALS"));
+            process.exit(0);
+          } else {
+            console.log(chalk.redBright("HASH ARE NOT EQUALS"));
+            process.exit(102);
+          }
         }
       });
     }
