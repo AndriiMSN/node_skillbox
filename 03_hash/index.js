@@ -2,37 +2,48 @@
 const fs = require("fs");
 const chalk = require("chalk");
 const crypto = require("crypto");
-const path = require("path");
-const request = require("request");
+const axios = require("axios");
 
 // Constants
-
-const download = (url, pathLocal, callback, isSha) => {
-  request(url, (err, res) => {
-    if (res.statusCode === 200) {
-      if (!fs.existsSync("./test-files2")) {
-        fs.mkdir(path.join(__dirname, "./test-files2"), (err) => {
-          if (err) {
-            return console.error(err);
-          }
-          console.log(chalk.yellowBright("Directory created successfully!"));
-          if (!isSha) {
-            console.log(chalk.blueBright("Starting downloading..."));
-          }
-          request(url).pipe(fs.createWriteStream(pathLocal)).on("close", callback);
-        });
-      } else {
-        if (!isSha) {
-          console.log(chalk.blueBright("Starting downloading..."));
-        }
-        request(url).pipe(fs.createWriteStream(pathLocal)).on("close", callback);
-      }
-    } else {
-      console.log(chalk.redBright("Status : ", res.statusCode), chalk.blue(isSha ? "...sha256" : "...file"));
-    }
-  });
+const equalHashes = (hash, existedHash) => {
+  console.table([
+    ["Crypto", hash],
+    ["SHA256", existedHash],
+  ]);
+  if (hash === existedHash) {
+    console.log(chalk.greenBright("HASH ARE EQUALS"));
+    process.exit(0);
+  } else {
+    console.log(chalk.redBright("HASH ARE NOT EQUALS"));
+    process.exit(102);
+  }
 };
-const checkHashes = (filePath) => {
+// const download = (url, pathLocal, callback, isSha) => {
+//   request(url, (err, res) => {
+//     if (res.statusCode === 200) {
+//       if (!fs.existsSync("./test-files2")) {
+//         fs.mkdir(path.join(__dirname, "./test-files2"), (err) => {
+//           if (err) {
+//             return console.error(err);
+//           }
+//           console.log(chalk.yellowBright("Directory created successfully!"));
+//           if (!isSha) {
+//             console.log(chalk.blueBright("Starting downloading..."));
+//           }
+//           request(url).pipe(fs.createWriteStream(pathLocal)).on("close", callback);
+//         });
+//       } else {
+//         if (!isSha) {
+//           console.log(chalk.blueBright("Starting downloading..."));
+//         }
+//         request(url).pipe(fs.createWriteStream(pathLocal)).on("close", callback);
+//       }
+//     } else {
+//       console.log(chalk.redBright("Status : ", res.statusCode), chalk.blue(isSha ? "...sha256" : "...file"));
+//     }
+//   });
+// };
+const checkHashesLocal = (filePath) => {
   if (fs.existsSync(filePath)) {
     console.log(chalk.blueBright("Start Reading files..."));
 
@@ -46,24 +57,14 @@ const checkHashes = (filePath) => {
         fs.readFile(filePath, (err, dataFile) => {
           if (err) {
             console.log(chalk.redBright(err));
-            process.exit(100);
+            process.exit(101);
           } else {
             // Create hash
             const hash = crypto.createHash("sha256").update(dataFile).digest("hex").trim();
             // SHA256 Current hash
             const existedHash = data.toString().trim();
 
-            console.table([
-              ["Crypto", hash],
-              ["SHA256", existedHash],
-            ]);
-            if (hash === existedHash) {
-              console.log(chalk.greenBright("HASH ARE EQUALS"));
-              process.exit(0);
-            } else {
-              console.log(chalk.redBright("HASH ARE NOT EQUALS"));
-              process.exit(102);
-            }
+            equalHashes(hash, existedHash);
           }
         });
       }
@@ -79,28 +80,41 @@ const checkHashes = (filePath) => {
 if (/^http([s]|):\/\//.test(process.argv[2])) {
   const filePath = process.argv[2];
 
-  const splitURL = filePath.split("/");
-  const filename = splitURL[splitURL.length - 1];
+  (async () => {
+    console.log(chalk.blueBright("Starting reading files from URL..."));
 
-  download(
-    filePath,
-    "./test-files2/" + filename,
-    () => {
-      console.log(chalk.greenBright("Downloading file finished..."));
-      console.log(chalk.blueBright("Starting downloading sha256..."));
+    const buffer = await axios
+      .get(filePath, { responseType: "arraybuffer" })
+      .then((response) => {
+        console.log(chalk.greenBright("File has read..."));
+        return response.data;
+      })
+      .catch(() => {
+        console.log(chalk.redBright("Error can't read file"));
+        process.exit(100);
+      });
 
-      download(
-        filePath + ".sha256",
-        "./test-files2/" + filename + ".sha256",
-        () => {
-          console.log(chalk.greenBright("Downloading .256 finished..."));
-          checkHashes("./test-files2/" + filename);
-        },
-        true
-      );
-    },
-    false
-  );
+    const sha256 = await axios
+      .get(filePath + ".sha256", { responseType: "arraybuffer" })
+      .then((response) => {
+        console.log(chalk.greenBright("SHA256 has read..."));
+        return response.data;
+      })
+      .catch(() => {
+        console.log(chalk.redBright("Error can't read sha256"));
+        process.exit(101);
+      });
+
+    try {
+      const hash = crypto.createHash("sha256").update(Buffer.from(buffer, "hex")).digest("hex").trim();
+      // SHA256 Current hash
+      const existedHash = Buffer.from(sha256).toString().trim();
+
+      equalHashes(hash, existedHash);
+    } catch (e) {
+      console.log(chalk.redBright(e));
+    }
+  })();
 } else {
-  checkHashes(process.argv[2]);
+  checkHashesLocal(process.argv[2]);
 }
