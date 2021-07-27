@@ -2,18 +2,21 @@ const axios = require("axios");
 
 const baseUrl = "https://swapi.dev/api/people/?search=";
 
-const count = [];
+const countArray = [];
 const heights = new Map();
 
 const getSwapiInfo = async (name) => {
-  const response = await axios(baseUrl + name).catch((e) => console.log(e));
+  const response = await axios(baseUrl + name).catch((e) => console.log(e.status));
   const data = await response.data;
-  count.push(data.count);
+  const count = data.count;
 
-  if (data.count > 0) {
+  countArray.push(count);
+  if (count > 0) {
     data.results.forEach((el) => {
       heights.set(el.name, parseInt(el.height));
     });
+  } else if (count === 0) {
+    console.log("No results found for " + name);
   }
 };
 
@@ -25,13 +28,17 @@ for (let i = 2; i < process.argv.length; i++) {
 
 Promise.all(promises)
   .then(() => {
-    console.log(
-      "Total results: ",
-      count.reduce((x, y) => x + y, 0)
-    );
-    console.log("All: ", [...heights.keys()].sort().join(", "));
-    console.log("Min height: ", [...heights].reduce((x, y) => (x[1] < y[1] ? x : y)).join(", "));
-    console.log("Min height: ", [...heights].reduce((x, y) => (x[1] > y[1] ? x : y)).join(", "));
+    if (heights.size > 0) {
+      console.log(
+        "Total results: ",
+        countArray.reduce((x, y) => x + y, 0)
+      );
+      console.log("All: ", [...heights.keys()].sort().join(", "));
+      console.log("Min height: ", [...heights].reduce((x, y) => (x[1] < y[1] ? x : y)).join(", "));
+      console.log("Min height: ", [...heights].reduce((x, y) => (x[1] > y[1] ? x : y)).join(", "));
+    } else if (heights.size === 0) {
+      console.log("No results found");
+    }
   })
   .catch((e) => {
     console.log(e);
