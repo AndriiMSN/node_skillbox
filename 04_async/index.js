@@ -29,6 +29,7 @@ for (let i = 2; i < process.argv.length; i++) {
 Promise.all(promises)
   .then(() => {
     if (heights.size > 0) {
+      console.log(countArray);
       console.log(
         "Total results: ",
         countArray.reduce((x, y) => x + y, 0)
