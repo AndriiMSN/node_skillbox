@@ -93,8 +93,10 @@
     },
     created() {
       this.fetchActiveTimers();
+      this.fetchOldTimers();
       setInterval(() => {
         this.fetchActiveTimers();
+        this.fetchOldTimers();
       }, 1000);
       this.fetchOldTimers();
     },

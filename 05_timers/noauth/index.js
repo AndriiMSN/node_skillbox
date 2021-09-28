@@ -1,6 +1,6 @@
 const express = require("express");
 const nunjucks = require("nunjucks");
-const { nanoid } = require("nanoid");
+const {nanoid} = require("nanoid");
 
 const app = express();
 
@@ -27,28 +27,9 @@ app.get("/", (req, res) => {
 });
 
 let TIMERS = [];
-// You can use these initial data
-/*
-const TIMERS = [
-  {
-    start: Date.now(),
-    description: "Timer 1",
-    isActive: true,
-    id: nanoid(),
-  },
-  {
-    start: Date.now() - 5000,
-    end: Date.now() - 3000,
-    duration: 2000,
-    description: "Timer 0",
-    isActive: false,
-    id: nanoid(),
-  },
-];
-*/
 
 app.get("/api/timers", async (req, res) => {
-  const { isActive } = await req.query;
+  const {isActive} = await req.query;
 
   let timers = TIMERS.filter((el) => el.isActive.toString() === isActive).map((el) => {
     if (el.isActive) {
@@ -63,7 +44,7 @@ app.get("/api/timers", async (req, res) => {
 });
 
 app.post("/api/timers", (req, res) => {
-  const { description } = req.body;
+  const {description} = req.body;
   const id = nanoid();
   const timer = {
     start: Date.now(),
@@ -72,8 +53,7 @@ app.post("/api/timers", (req, res) => {
     id,
   };
   TIMERS.push(timer);
-  console.log(TIMERS);
-  return res.status(200).json({ id });
+  return res.status(201).json({id});
 });
 
 app.post("/api/timers/:id/stop", (req, res) => {
@@ -87,8 +67,7 @@ app.post("/api/timers/:id/stop", (req, res) => {
     }
     return el;
   });
-  console.log(TIMERS);
-  return res.status(200).json({ id });
+  return res.status(200).json({id});
 });
 
 const port = process.env.PORT || 3000;
