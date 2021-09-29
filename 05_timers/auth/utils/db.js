@@ -1,5 +1,5 @@
-const { nanoid } = require("nanoid");
-const { hash } = require("./hash");
+const {nanoid} = require("nanoid");
+const {hash} = require("./hash");
 
 const DB = {
   users: [
@@ -53,7 +53,7 @@ exports.deleteSession = (session) => {
 exports.getTimers = (userid, active) => {
   if (DB.timers[userid]) {
     return DB.timers[userid]
-      .filter((el) => el.isActive.toString() === active)
+      .filter((el) => el.isActive === active)
       .map((el) => {
         if (el.isActive) {
           el.progress = Date.now() - el.start;
@@ -82,13 +82,15 @@ exports.createTimer = (userId, description) => {
 };
 
 exports.stopTimer = (userId, timerId) => {
-  DB.timers[userId] = DB.timers[userId].map((el) => {
-    if (el.id === timerId) {
-      delete el.progress;
-      el.end = Date.now();
-      el.duration = el.end - el.start;
-      el.isActive = false;
-    }
-    return el;
-  });
+  const index = DB.timers[userId].findIndex(el => el.id === timerId)
+  if (index !== -1) {
+    const stoppedTimer = {...DB.timers[userId][index]}
+    delete stoppedTimer.progress
+    stoppedTimer.end = Date.now();
+    stoppedTimer.duration = stoppedTimer.end - stoppedTimer.start;
+    stoppedTimer.isActive = false;
+    DB.timers[userId][index] = stoppedTimer;
+    return true;
+  }
+  return false;
 };
