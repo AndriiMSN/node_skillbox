@@ -6,7 +6,7 @@ const {isAuth} = require("../middleware/auth");
 router.get("/", isAuth(), async (req, res) => {
   if (!req.user) return res.sendStatus(401);
 
-  let {isActive} = await req.query;
+  let {isActive} = req.query;
   isActive = isActive === 'true';
 
   let timers = getTimers(req.user._id, isActive);
